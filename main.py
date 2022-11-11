@@ -81,8 +81,6 @@ def read_csv_in(filename):
     data = data[['Имя', 'Тип']]
     data = data.query('Имя.str.lower().str.contains("пакб")').reset_index(drop=True)
     data['Имя'] = data['Имя'].str.strip()
-    # отбрасываем окончания .sldasm
-    data['Имя'] = data['Имя'].str[0:-7]
     # сплитуем Имя на Наименование и Обозначение
     rows = data.loc[data['Имя'].str.contains(' - ')].index
     data[['Обозначение', 'Наименование']] = data.loc[rows, 'Имя'].str.split(pat=' - ', n=1, expand=True)
@@ -102,8 +100,8 @@ def add_label(pakb, df):
     pakb = 'ПАКБ.' + pakb
     df = df[df['Обозначение'] == pakb]
     if len(df) > 0:
-        df = df.reset_index(drop=True)
-        return df.loc[0, 'Наименование']
+        df = df['Наименование'].value_counts()
+        return df.index[0]
     else:
         return ''
 
