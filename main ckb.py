@@ -18,17 +18,10 @@ def scrap_file(file_name, transform=False):
     image = convert_from_path(file_name, poppler_path=r'C:\Program Files\poppler\Library\bin')
     image = image[0]
     width, height = image.size
-    if width > height:
-        scope = 'A3'
-    else:
-        scope = 'A4'
 
-    if scope == 'A3':
-        pakb = image.crop((width * 0.73, height * 0.78, width * 0.94, height * 0.86))
-        label = image.crop((width * 0.71, height * 0.85, width * 0.85, height * 0.94))
-    if scope == 'A4':
-        pakb = image.crop((width * 0.4, height * 0.77, width * 0.85, height * 0.85))
-        label = image.crop((width * 0.41, height * 0.84, width * 0.74, height * 0.935))
+    pakb = image.crop((width - 1000, height - 600, width - 100, height * 0.99))
+    label = image.crop((width * 0.41, height * 0.84, width * 0.74, height * 0.935))
+
 
     if transform:
         width, height = pakb.size
@@ -37,7 +30,7 @@ def scrap_file(file_name, transform=False):
         new_width = width + int(round(xshift))
         pakb = pakb.transform((new_width, height), Image.AFFINE,
                             (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
-    pakb.save(file_name + '.jpeg')
+    #label.save(file_name + str(transform) + '.jpeg')
     fake_label = pytesseract.image_to_string(label, lang='rus').strip()
     fake_label = fake_label.replace('\n', ' ')
     fake_label = re.sub('[^а-яА-Я ]', '', fake_label).strip()
@@ -47,21 +40,20 @@ def scrap_file(file_name, transform=False):
 def get_pakb(string, fake_label):
     pattern = '[\d]{4}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{4}'
     pakb = re.findall(pattern, string)
-    print(string)
-    print(pakb)
     if pakb == []:
         return False
     else:
         pakb = pakb[0]
         pakb = re.sub('\.', '' ,pakb)
         pakb = pakb[0:4] + '.' + pakb[4:6] + '.' + pakb[6:8] + '.' + pakb[8:]
-        print(pakb)
     label = add_label(pakb, data)
-    pakb = 'ЦКБ.' + pakb + ' - '
+    pakb2 = 'ЦКБ.' + pakb + ' - '
     if label == '':
-        label = fake_label
-        pakb = '@' + pakb
-    return pakb + label
+        label = add_label(pakb[-4:], data)
+        if label == '':
+            label = fake_label
+        pakb2 = '@' + pakb2
+    return pakb2 + label
 
 
 def rename(filename, pakb, cnt=0):
@@ -104,8 +96,8 @@ def read_csv_in(filename):
     return data[['Наименование', 'Обозначение']]
 
 def add_label(pakb, df):
-    pakb = 'ЦКБ.' + pakb
-    df = df[df['Обозначение'] == pakb]
+
+    df = df.query('Обозначение.str.contains(@pakb)')
     if len(df) > 0:
         df = df['Наименование'].value_counts()
         anwser = df.index[0]
@@ -117,9 +109,9 @@ def add_label(pakb, df):
 
 data = read_csv_in('ckb.csv')
 curr_dir = os.getcwd()
-A_dir = 'B'
+A_dir = 'A4'
 A_files = get_files(A_dir)
-os.chdir(curr_dir + '/B')
+os.chdir(curr_dir + '/A4')
 rename_catalog(A_files)
 
 
