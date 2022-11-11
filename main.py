@@ -25,8 +25,10 @@ def scrap_file(file_name, transform=False):
 
     if scope == 'A3':
         pakb = image.crop((width * 0.73, height * 0.78, width * 0.94, height * 0.86))
+        label = image.crop((width * 0.71, height * 0.85, width * 0.85, height * 0.94))
     if scope == 'A4':
         pakb = image.crop((width * 0.4, height * 0.77, width * 0.85, height * 0.85))
+        label = image.crop((width * 0.41, height * 0.84, width * 0.74, height * 0.935))
 
     if transform:
         width, height = pakb.size
@@ -35,12 +37,14 @@ def scrap_file(file_name, transform=False):
         new_width = width + int(round(xshift))
         pakb = pakb.transform((new_width, height), Image.AFFINE,
                             (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
-        #pakb.save(file_name + '.jpeg')
+    #label.save(file_name + '.jpeg')
+    fake_label = pytesseract.image_to_string(label, lang='rus').strip()
+    fake_label = fake_label.replace('\n', ' ')
+    fake_label = re.sub('[^а-яА-Я ]', '', fake_label).strip()
+    return pytesseract.image_to_string(pakb, config='digits').strip(), fake_label
 
-    return pytesseract.image_to_string(pakb, config='digits').strip()
 
-
-def get_pakb(string):
+def get_pakb(string, fake_label):
     pattern = '[\d]{6}[\.]{0,1}[\d]{3}'
     pakb = re.findall(pattern, string)
     if pakb == []:
@@ -50,7 +54,11 @@ def get_pakb(string):
     if len(pakb) == 9:
         pakb = pakb[0:6] + '.' + pakb[6:]
     label = add_label(pakb, data)
-    return 'ПАКБ.' + pakb + ' - ' + label
+    pakb = 'ПАКБ.' + pakb + ' - '
+    if label == '':
+        label = fake_label
+        pakb = '@' + pakb
+    return pakb + label
 
 
 def rename(filename, pakb, cnt=0):
@@ -66,13 +74,13 @@ def rename(filename, pakb, cnt=0):
 
 def rename_catalog(catalog):
     for file in catalog:
-        raw_pakb = scrap_file(file)
-        pakb = get_pakb(raw_pakb)
+        raw_pakb, fake_label = scrap_file(file)
+        pakb = get_pakb(raw_pakb, fake_label)
         if pakb:
             rename(file, pakb)
         else:
-            raw_pakb = scrap_file(file, transform=True)
-            pakb = get_pakb(raw_pakb)
+            raw_pakb, fake_label = scrap_file(file, transform=True)
+            pakb = get_pakb(raw_pakb, fake_label)
             if pakb:
                 rename(file, pakb)
 
@@ -101,10 +109,11 @@ def add_label(pakb, df):
     df = df[df['Обозначение'] == pakb]
     if len(df) > 0:
         df = df['Наименование'].value_counts()
-        return df.index[0]
+        anwser = df.index[0]
+        anwser = re.sub('[^а-яА-ЯёЁ\d ]', '', anwser)
+        return anwser
     else:
         return ''
-
 
 data = read_csv_in('all.csv')
 curr_dir = os.getcwd()
