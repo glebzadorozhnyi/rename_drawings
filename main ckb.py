@@ -37,7 +37,7 @@ def scrap_file(file_name, transform=False):
         new_width = width + int(round(xshift))
         pakb = pakb.transform((new_width, height), Image.AFFINE,
                             (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
-    #label.save(file_name + '.jpeg')
+    pakb.save(file_name + '.jpeg')
     fake_label = pytesseract.image_to_string(label, lang='rus').strip()
     fake_label = fake_label.replace('\n', ' ')
     fake_label = re.sub('[^а-яА-Я ]', '', fake_label).strip()
@@ -45,16 +45,19 @@ def scrap_file(file_name, transform=False):
 
 
 def get_pakb(string, fake_label):
-    pattern = '[\d]{6}[\.]{0,1}[\d]{3}'
+    pattern = '[\d]{4}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{4}'
     pakb = re.findall(pattern, string)
+    print(string)
+    print(pakb)
     if pakb == []:
         return False
     else:
         pakb = pakb[0]
-    if len(pakb) == 9:
-        pakb = pakb[0:6] + '.' + pakb[6:]
+        pakb = re.sub('\.', '' ,pakb)
+        pakb = pakb[0:4] + '.' + pakb[4:6] + '.' + pakb[6:8] + '.' + pakb[8:]
+        print(pakb)
     label = add_label(pakb, data)
-    pakb = 'ПАКБ.' + pakb + ' - '
+    pakb = 'ЦКБ.' + pakb + ' - '
     if label == '':
         label = fake_label
         pakb = '@' + pakb
@@ -87,7 +90,7 @@ def rename_catalog(catalog):
 def read_csv_in(filename):
     data = pd.read_csv(filename, encoding='ANSI', sep=';')
     data = data[['Имя', 'Тип']]
-    data = data.query('Имя.str.lower().str.contains("пакб")').reset_index(drop=True)
+    data = data.query('Имя.str.lower().str.contains("цкб")').reset_index(drop=True)
     data['Имя'] = data['Имя'].str.strip()
     # сплитуем Имя на Наименование и Обозначение
     rows = data.loc[data['Имя'].str.contains(' - ')].index
@@ -96,16 +99,12 @@ def read_csv_in(filename):
     data.loc[data['Наименование'].isna(), 'Наименование'] = data['Имя']
     data = data.fillna('')
     data = data.drop(columns='Имя')
-    # помечаем элементы, которые начинаются не на ПАКБ или имеют слишком длинное имя.
-    data.loc[data.eval(
-        '~Обозначение.str.lower().str.contains("^пакб[\. ]{0,2}\d{6}[\. ]{0,2}\d{3}.{0,4}$")'), 'bez_pakb'] = True
-    data['bez_pakb'] = data['bez_pakb'].fillna(False)
-    data = data[data['bez_pakb'] == False]
+
 
     return data[['Наименование', 'Обозначение']]
 
 def add_label(pakb, df):
-    pakb = 'ПАКБ.' + pakb
+    pakb = 'ЦКБ.' + pakb
     df = df[df['Обозначение'] == pakb]
     if len(df) > 0:
         df = df['Наименование'].value_counts()
@@ -116,11 +115,11 @@ def add_label(pakb, df):
         return ''
 
 
-data = read_csv_in('all.csv')
+data = read_csv_in('ckb.csv')
 curr_dir = os.getcwd()
-A_dir = 'A2'
+A_dir = 'B'
 A_files = get_files(A_dir)
-os.chdir(curr_dir + '/A2')
+os.chdir(curr_dir + '/B')
 rename_catalog(A_files)
 
 
