@@ -78,8 +78,7 @@ def rename_catalog(catalog):
 
 def read_csv_in(filename):
     data = pd.read_csv(filename, encoding='ANSI', sep=';')
-    data = data[['Имя файла', 'Количество']]
-    data.columns = ['Имя', 'Количество']
+    data = data[['Имя', 'Тип']]
     data = data.query('Имя.str.lower().str.contains("пакб")').reset_index(drop=True)
     data['Имя'] = data['Имя'].str.strip()
     # отбрасываем окончания .sldasm
