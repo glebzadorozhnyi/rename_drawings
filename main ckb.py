@@ -38,6 +38,7 @@ def scrap_file(file_name, transform=False):
 
 
 def get_pakb(string, fake_label):
+    print(string)
     pattern = '[\d]{4}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{2}[\.]{0,1}[\d]{4}'
     pakb = re.findall(pattern, string)
     if pakb == []:
@@ -109,9 +110,9 @@ def add_label(pakb, df):
 
 data = read_csv_in('ckb.csv')
 curr_dir = os.getcwd()
-A_dir = 'A4'
+A_dir = 'C'
 A_files = get_files(A_dir)
-os.chdir(curr_dir + '/A4')
+os.chdir(curr_dir + '/C')
 rename_catalog(A_files)
 
 
