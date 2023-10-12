@@ -27,7 +27,7 @@ def scrap_file(file_name, transform=False):
         pakb = image.crop((width * 0.73, height * 0.78, width * 0.94, height * 0.86))
         label = image.crop((width * 0.71, height * 0.85, width * 0.85, height * 0.94))
         #pakb = image.crop((width - 1000, height - 600, width - 100, height * 0.99))
-        #label = image.crop((width - 1000, height - 500, width - 450, height - 150))
+        #label = image.crop((width - 1000, height - 500, width - 450, height - 150)) #Параметры для А1 и А2
     if scope == 'A4':
         #pakb = image.crop((width * 0.4, height * 0.77, width * 0.85, height * 0.85))
         pakb = image.crop((width * 0.4, height * 0.8, width * 0.85, height * 0.9))
