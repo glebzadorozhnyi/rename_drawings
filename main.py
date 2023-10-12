@@ -15,9 +15,10 @@ def get_files(directory):
 
 
 def scrap_file(file_name, transform=False):
-    image = convert_from_path(file_name, poppler_path=r'C:\Program Files\poppler\Library\bin')
+    image = convert_from_path(file_name, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
     image = image[0]
     width, height = image.size
+    #Определение формата листа
     if width > height:
         scope = 'A3'
     else:
@@ -26,13 +27,14 @@ def scrap_file(file_name, transform=False):
     if scope == 'A3':
         pakb = image.crop((width * 0.73, height * 0.78, width * 0.94, height * 0.86))
         label = image.crop((width * 0.71, height * 0.85, width * 0.85, height * 0.94))
-        #pakb = image.crop((width - 1000, height - 600, width - 100, height * 0.99))
-        #label = image.crop((width - 1000, height - 500, width - 450, height - 150)) #Параметры для А1 и А2
+        #pakb = image.crop((width - 1000, height - 600, width - 100, height * 0.99)) #параметры для формата листов А1 и А2
+        #label = image.crop((width - 1000, height - 500, width - 450, height - 150))
     if scope == 'A4':
         #pakb = image.crop((width * 0.4, height * 0.77, width * 0.85, height * 0.85))
         pakb = image.crop((width * 0.4, height * 0.8, width * 0.85, height * 0.9))
         label = image.crop((width * 0.41, height * 0.84, width * 0.74, height * 0.935))
     #pakb = pakb.rotate(1.5)
+    # Трансформация выпрямляющая курсивный шрифт
     if transform:
         width, height = pakb.size
         m = -0.2
@@ -40,8 +42,9 @@ def scrap_file(file_name, transform=False):
         new_width = width + int(round(xshift))
         pakb = pakb.transform((new_width, height), Image.AFFINE,
                             (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
-    pakb.save(file_name + '.jpeg')
-    label.save(file_name + '0.jpeg')
+
+    #pakb.save(file_name + '.jpeg') #Сохранение в jpeg областей в которых ищем текст
+    #label.save(file_name + '0.jpeg')
     fake_label = pytesseract.image_to_string(label, lang='rus').strip()
     fake_label = fake_label.replace('\n', ' ')
     fake_label = re.sub('[^а-яА-Я ]', '', fake_label).strip()
@@ -122,9 +125,9 @@ def add_label(pakb, df):
 
 data = read_csv_in('all.csv')
 curr_dir = os.getcwd()
-A_dir = 'а3'
+A_dir = 'A'
 A_files = get_files(A_dir)
-os.chdir(curr_dir + '/а3')
+os.chdir(curr_dir + '//' + A_dir)
 rename_catalog(A_files)
 
 
